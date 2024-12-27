@@ -1,0 +1,19 @@
+{
+  "name": "test",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "^1.1.14"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "elysia": "^1.1.26"
+  },
+  "scripts": {
+    "dev": "bun run index.ts",
+    "build": "echo 'No build script needed for Bun'",
+    "start": "bun run index.ts"
+  }
+}
