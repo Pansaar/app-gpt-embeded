@@ -4,9 +4,7 @@
       <h1>Welcome to My Vue + Elysia App</h1>
     </header>
     <main>
-      <p>
-        This app is powered by Vue.js and served by Elysia!
-      </p>
+      <p>This app is powered by Vue.js and served by Elysia!</p>
       <input
         type="text"
         v-model="userInput"
@@ -32,39 +30,39 @@ export default {
     const userInput = ref<string>("");
 
     const loadData = async () => {
-  if (!userInput.value) {
-    alert("Please enter a question!");
-    return;
-  }
-
-  try {
-    const response = await fetch("http://localhost:3000/gpt-search", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ input: userInput.value }),
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-
-      // Check if the result has valid data
-      if (result.choices && result.choices.length > 0) {
-        data.value = result.choices[0].message.content.trim(); // Accessing the correct property
-      } else {
-        data.value = "No response from GPT. Please try again.";
-        console.error("Unexpected API response:", result);
+      if (!userInput.value) {
+        alert("Please enter a question!");
+        return;
       }
-    } else {
-      data.value = `Error: Failed to fetch data from backend. Status: ${response.status}`;
-      console.error("Failed to fetch data from backend");
-    }
-  } catch (error) {
-    data.value = "Error: Unable to fetch data. Please try again later.";
-    console.error("Error fetching data:", error);
-  }
-};
+
+      try {
+        const response = await fetch("http://localhost:3000/gpt-search", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ input: userInput.value }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+
+          // Check if the result has valid data
+          if (result.choices && result.choices.length > 0) {
+            data.value = result.choices[0].message.content.trim(); // Accessing the correct property
+          } else {
+            data.value = "No response from GPT. Please try again.";
+            console.error("Unexpected API response:", result);
+          }
+        } else {
+          data.value = `Error: Failed to fetch data from backend. Status: ${response.status}`;
+          console.error("Failed to fetch data from backend");
+        }
+      } catch (error) {
+        data.value = "Error: Unable to fetch data. Please try again later.";
+        console.error("Error fetching data:", error);
+      }
+    };
 
     return {
       data,
@@ -109,8 +107,13 @@ input {
 }
 
 pre {
-  background-color: #f5f5f5;
+  background-color: rgb(61, 61, 61);
   padding: 15px;
   border-radius: 4px;
+  font-size: 16px; /* Adjust font size for readability */
+  text-align: left; /* Ensure text alignment */
+  color: white; /* Set text color */
+  overflow-x: auto; /* Allow horizontal scrolling if needed */
+  white-space: pre-wrap; /* Preserve line breaks and allow text wrapping */
 }
 </style>
