@@ -1,19 +1,30 @@
 <template>
   <div id="app">
     <header>
-      <h1>Welcome to My Vue + Elysia App</h1>
+      <h1>BAY-AUTO Chatbot</h1>
     </header>
     <main>
-      <p>This app is powered by Vue.js and served by Elysia!</p>
+      <p>Powered by ChatGPT API</p>
+      <div>
+        <!-- Dynamically display images -->
+        <img
+          v-for="image in images"
+          id="carImage"
+          :key="image"
+          :src="`http://localhost:3000/automobile/${image}`"
+          :alt="image"
+          type="image"
+          @click="updateData(image)"
+        />
+      </div>
       <input
         type="text"
         v-model="userInput"
         placeholder="Type your question for GPT..."
         @keyup.enter="loadData"
       />
-      <button @click="loadData">Ask GPT</button>
+      <button @click="loadData">Ask BAY-NANA</button>
       <div v-if="data">
-        <h2>Response from GPT:</h2>
         <pre>{{ data }}</pre>
       </div>
     </main>
@@ -21,17 +32,54 @@
 </template>
 
 <script lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 
 export default {
   name: "App",
   setup() {
-    const data = ref<any>(null);
-    const userInput = ref<string>("");
+    const images = ref<string[]>([]); // Array of images
+    const data = ref<string | null>(null); // Stores pre-prompt or GPT response
+    const userInput = ref<string>(""); // User input for the chatbot
+    const selectedImage = ref<string | null>(null); // Currently selected image name
 
+    // Fetch the list of images from the backend
+    const fetchImages = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/list-images");
+        if (response.ok) {
+          const result = await response.json();
+          images.value = result.images; // Update images array
+        } else {
+          console.error("Failed to fetch images:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching images:", error);
+      }
+    };
+
+    // Updates data when an image is clicked
+    const updateData = (image: string) => {
+      // Remove the file extension from the image name
+      const prePrompt = image.replace(/\.(png|jpg|jpeg)$/i, "");
+      data.value = `Selected Automobile: ${prePrompt}`;
+      selectedImage.value = prePrompt; // Store the selected image name
+    };
+
+    // Handles the chatbot question logic
     const loadData = async () => {
       if (!userInput.value) {
         alert("Please enter a question!");
+        return;
+      }
+
+      // Add pre-prompt for automobile-related questions
+      const prePrompt = selectedImage.value
+        ? `Automobile Context: ${selectedImage.value}. `
+        : "";
+
+      // If the question is unrelated to automobiles, ignore it
+      if (!selectedImage.value && !userInput.value.toLowerCase().includes("car")) {
+        data.value = "This question is not related to automobiles. Please select a car or ask a car-related question.";
         return;
       }
 
@@ -41,7 +89,7 @@ export default {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ input: userInput.value }),
+          body: JSON.stringify({ input: `${prePrompt}${userInput.value}` }),
         });
 
         if (response.ok) {
@@ -64,10 +112,17 @@ export default {
       }
     };
 
+    // Fetch images when the component is mounted
+    onMounted(() => {
+      fetchImages();
+    });
+
     return {
+      images,
       data,
       userInput,
       loadData,
+      updateData,
     };
   },
 };
@@ -81,12 +136,16 @@ export default {
 }
 
 header {
-  background-color: #42b983;
+  background-color: #d1b239;
   padding: 20px;
 }
 
+header h1 {
+  color: white;
+}
+
 button {
-  background-color: #42b983;
+  background-color: #d1b239;
   color: white;
   border: none;
   padding: 10px 20px;
@@ -95,7 +154,7 @@ button {
 }
 
 button:hover {
-  background-color: #369b74;
+  background-color: #bfa02c;
 }
 
 input {
@@ -110,10 +169,22 @@ pre {
   background-color: rgb(61, 61, 61);
   padding: 15px;
   border-radius: 4px;
-  font-size: 16px; /* Adjust font size for readability */
-  text-align: left; /* Ensure text alignment */
-  color: white; /* Set text color */
-  overflow-x: auto; /* Allow horizontal scrolling if needed */
-  white-space: pre-wrap; /* Preserve line breaks and allow text wrapping */
+  font-size: 16px;
+  text-align: left;
+  color: white;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+img {
+  width: 200px;
+  margin: 10px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+img:hover {
+  cursor: pointer;
+  box-shadow: #d1b239 1px 1px 10px;
 }
 </style>

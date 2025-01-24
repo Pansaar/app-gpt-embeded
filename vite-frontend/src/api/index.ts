@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
 import dotenv from "dotenv";
 
@@ -10,7 +10,7 @@ dotenv.config();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 if (!OPENAI_API_KEY) {
   throw new Error(
-    "OpenAI API Key is missing. Add it to your .env file as OPENAI_API_KEY.",
+    "OpenAI API Key is missing. Add it to your .env file as OPENAI_API_KEY."
   );
 }
 
@@ -19,6 +19,8 @@ const USE_MOCK = process.env.USE_MOCK === "true";
 
 // Define the frontend path for serving static files
 const frontendPath = join(process.cwd(), "vite-frontend/dist");
+const automobilePath = join(process.cwd(), "../../automobile");
+console.log("Automobile Path:", automobilePath);
 
 const app = new Elysia();
 
@@ -26,7 +28,7 @@ const app = new Elysia();
 app.onRequest((context) => {
   // Set CORS headers for all requests
   context.set.headers = {
-    "Access-Control-Allow-Origin": "http://localhost:4173", // Adjust to your frontend origin
+    "Access-Control-Allow-Origin": "http://localhost:4173", // Change this to your frontend's URL
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
@@ -77,11 +79,11 @@ app.post("/gpt-search", async (context) => {
           Authorization: `Bearer ${OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "gpt-4-turbo", // Use "gpt-4" for the full version
+          model: "gpt-4-turbo",
           messages: [{ role: "user", content: userInput }],
           max_tokens: 150,
         }),
-      },
+      }
     );
 
     const result = await gptResponse.json();
@@ -106,10 +108,84 @@ app.post("/gpt-search", async (context) => {
       {
         headers: { "Content-Type": "application/json" },
         status: 500,
-      },
+      }
     );
   }
 });
+
+// List Images API Endpoint
+app.get("/list-images", () => {
+  try {
+    if (!existsSync(automobilePath)) {
+      return new Response(
+        JSON.stringify({ error: "Automobile directory not found" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Read all files in the automobile directory
+    const files = readdirSync(automobilePath);
+    const imageFiles = files.filter((file) =>
+      /\.(jpeg|jpg|png)$/i.test(file)
+    );
+
+    return new Response(JSON.stringify({ images: imageFiles }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Error reading automobile directory:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Failed to read automobile directory",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+});
+
+app.get("/automobile/*", (context) => {
+  // Extract the path from the URL
+  const url = new URL(context.request.url);
+  const fileName = url.pathname.replace("/automobile/", ""); // Only get the file name
+  const filePath = join(automobilePath, fileName); // Join with the automobilePath
+
+  // Log debug information
+  console.log("Requested File:", fileName);
+  console.log("Resolved File Path:", filePath);
+  console.log("File Exists:", existsSync(filePath));
+
+  // Check if the file exists and serve it
+  if (existsSync(filePath)) {
+    return new Response(readFileSync(filePath), {
+      headers: { "Content-Type": getMimeType(filePath) },
+    });
+  }
+
+  // Return 404 if the file doesn't exist
+  return new Response("File not found", { status: 404 });
+});
+
+
+// Fallback route for SPA
+app.get("/*", (context) => {
+  const url = new URL(context.request.url);
+  const filePath = join(frontendPath, url.pathname);
+
+  if (existsSync(filePath) && !filePath.endsWith("/")) {
+    return new Response(readFileSync(filePath), {
+      headers: {
+        "Content-Type": getMimeType(filePath),
+      },
+    });
+  }
+
+  const html = readFileSync(join(frontendPath, "index.html"), "utf-8");
+  return new Response(html, {
+    headers: { "Content-Type": "text/html" },
+  });
+});
+
+
 
 // Serve Static Files
 app.get("/*", (context) => {
@@ -147,6 +223,7 @@ function getMimeType(filePath: string): string {
     json: "application/json",
     png: "image/png",
     jpg: "image/jpeg",
+    jpeg: "image/jpeg",
     svg: "image/svg+xml",
     ico: "image/x-icon",
   };
