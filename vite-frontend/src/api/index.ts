@@ -1,7 +1,8 @@
 import { Elysia } from "elysia";
-import { readFileSync, existsSync, readdirSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import dotenv from "dotenv";
+import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 // Load environment variables
 dotenv.config();
@@ -14,26 +15,35 @@ if (!OPENAI_API_KEY) {
   );
 }
 
+// S3 Configuration
+const S3_BUCKET = process.env.S3_BUCKET;
+const REGION = process.env.AWS_REGION;
+if (!S3_BUCKET) {
+  throw new Error("S3_BUCKET environment variable is missing.");
+}
+if (!REGION) {
+  throw new Error("AWS_REGION environment variable is missing.");
+}
+
+const s3 = new S3Client({ region: REGION });
+
 // Determine whether to use mocked responses
 const USE_MOCK = process.env.USE_MOCK === "true";
 
 // Define the frontend path for serving static files
 const frontendPath = join(process.cwd(), "vite-frontend/dist");
-const automobilePath = join(process.cwd(), "../../automobile");
-console.log("Automobile Path:", automobilePath);
+console.log("Frontend Path:", frontendPath);
 
 const app = new Elysia();
 
 // Global CORS Middleware
 app.onRequest((context) => {
-  // Set CORS headers for all requests
   context.set.headers = {
-    "Access-Control-Allow-Origin": "http://localhost:4173", // Change this to your frontend's URL
+    "Access-Control-Allow-Origin": "http://localhost:4173", // Update to your frontend's URL in production
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
 
-  // Handle preflight requests
   if (context.request.method === "OPTIONS") {
     return new Response(null, { status: 204 });
   }
@@ -42,25 +52,26 @@ app.onRequest((context) => {
 // GPT-Search API Endpoint
 app.post("/gpt-search", async (context) => {
   try {
-    // Parse the incoming request body
     const body = await context.request.json();
     const userInput = body?.input;
 
     if (!userInput) {
-      return new Response(JSON.stringify({ error: "Input is required" }), {
-        headers: { "Content-Type": "application/json" },
-        status: 400,
-      });
+      return new Response(
+        JSON.stringify({ error: "Input is required" }),
+        {
+          headers: { "Content-Type": "application/json" },
+          status: 400,
+        }
+      );
     }
 
-    // Use mocked response if USE_MOCK is true
     if (USE_MOCK) {
       const mockResponse = {
         choices: [
           {
             message: {
               role: "assistant",
-              content: `You said: "${userInput}". This is a mocked response from GPT.`,
+              content: `You said: "${userInput}". This is a mocked response.`,
             },
           },
         ],
@@ -94,17 +105,18 @@ app.post("/gpt-search", async (context) => {
       });
     } else {
       console.error("Error from OpenAI API:", result);
-      return new Response(JSON.stringify({ error: result.error }), {
-        headers: { "Content-Type": "application/json" },
-        status: gptResponse.status,
-      });
+      return new Response(
+        JSON.stringify({ error: result.error.message || "Unknown error" }),
+        {
+          headers: { "Content-Type": "application/json" },
+          status: gptResponse.status,
+        }
+      );
     }
   } catch (error) {
     console.error("Error processing GPT request:", error);
     return new Response(
-      JSON.stringify({
-        error: "Internal server error. Please try again later.",
-      }),
+      JSON.stringify({ error: "Internal server error" }),
       {
         headers: { "Content-Type": "application/json" },
         status: 500,
@@ -113,86 +125,97 @@ app.post("/gpt-search", async (context) => {
   }
 });
 
-// List Images API Endpoint
-app.get("/list-images", () => {
+app.get("/list-images", async () => {
   try {
-    if (!existsSync(automobilePath)) {
-      return new Response(
-        JSON.stringify({ error: "Automobile directory not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
-    }
+    const carParams = { Bucket: S3_BUCKET, Prefix: "cars/" };
+    const motorcycleParams = { Bucket: S3_BUCKET, Prefix: "motorcycles/" };
 
-    // Read all files in the automobile directory
-    const files = readdirSync(automobilePath);
-    const imageFiles = files.filter((file) =>
-      /\.(jpeg|jpg|png)$/i.test(file)
-    );
+    const carCommand = new ListObjectsV2Command(carParams);
+    const motorcycleCommand = new ListObjectsV2Command(motorcycleParams);
 
-    return new Response(JSON.stringify({ images: imageFiles }), {
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error("Error reading automobile directory:", error);
+    const [carResponse, motorcycleResponse] = await Promise.all([
+      s3.send(carCommand),
+      s3.send(motorcycleCommand),
+    ]);
+
+    const carImages =
+      carResponse.Contents?.map((item) => `https://${S3_BUCKET}.s3.${REGION}.amazonaws.com/${item.Key}`) || [];
+    const motorcycleImages =
+      motorcycleResponse.Contents?.map((item) => `https://${S3_BUCKET}.s3.${REGION}.amazonaws.com/${item.Key}`) || [];
+
+    const allImages = [...carImages, ...motorcycleImages];
+
     return new Response(
-      JSON.stringify({
-        error: "Failed to read automobile directory",
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({ images: allImages }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    return new Response(
+      JSON.stringify({ error: "Failed to fetch images" }),
+      {
+        headers: { "Content-Type": "application/json" },
+        status: 500,
+      }
     );
   }
 });
 
-app.get("/automobile/*", (context) => {
-  // Extract the path from the URL
-  const url = new URL(context.request.url);
-  const fileName = url.pathname.replace("/automobile/", ""); // Only get the file name
-  const filePath = join(automobilePath, fileName); // Join with the automobilePath
+app.get("/list-images-cars", async () => {
+  try {
+    const params = { Bucket: S3_BUCKET, Prefix: "cars/" };
+    const command = new ListObjectsV2Command(params);
+    const response = await s3.send(command);
 
-  // Log debug information
-  console.log("Requested File:", fileName);
-  console.log("Resolved File Path:", filePath);
-  console.log("File Exists:", existsSync(filePath));
+    const carImages =
+      response.Contents?.map((item) => `https://${S3_BUCKET}.s3.${REGION}.amazonaws.com/${item.Key}`) || [];
 
-  // Check if the file exists and serve it
-  if (existsSync(filePath)) {
-    return new Response(readFileSync(filePath), {
-      headers: { "Content-Type": getMimeType(filePath) },
-    });
+    return new Response(
+      JSON.stringify({ images: carImages }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error fetching car images:", error);
+    return new Response(
+      JSON.stringify({ error: "Failed to fetch car images" }),
+      {
+        headers: { "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
   }
-
-  // Return 404 if the file doesn't exist
-  return new Response("File not found", { status: 404 });
 });
 
+app.get("/list-images-motorcycles", async () => {
+  try {
+    const params = { Bucket: S3_BUCKET, Prefix: "motorcycles/" };
+    const command = new ListObjectsV2Command(params);
+    const response = await s3.send(command);
 
-// Fallback route for SPA
-app.get("/*", (context) => {
-  const url = new URL(context.request.url);
-  const filePath = join(frontendPath, url.pathname);
+    const motorcycleImages =
+      response.Contents?.map((item) => `https://${S3_BUCKET}.s3.${REGION}.amazonaws.com/${item.Key}`) || [];
 
-  if (existsSync(filePath) && !filePath.endsWith("/")) {
-    return new Response(readFileSync(filePath), {
-      headers: {
-        "Content-Type": getMimeType(filePath),
-      },
-    });
+    return new Response(
+      JSON.stringify({ images: motorcycleImages }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Error fetching motorcycle images:", error);
+    return new Response(
+      JSON.stringify({ error: "Failed to fetch motorcycle images" }),
+      {
+        headers: { "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
   }
-
-  const html = readFileSync(join(frontendPath, "index.html"), "utf-8");
-  return new Response(html, {
-    headers: { "Content-Type": "text/html" },
-  });
 });
-
-
 
 // Serve Static Files
 app.get("/*", (context) => {
   const url = new URL(context.request.url);
   const filePath = join(frontendPath, url.pathname);
 
-  // Check if the requested file exists
   if (existsSync(filePath) && !filePath.endsWith("/")) {
     return new Response(readFileSync(filePath), {
       headers: {
@@ -201,7 +224,6 @@ app.get("/*", (context) => {
     });
   }
 
-  // Fallback to index.html for SPA
   const html = readFileSync(join(frontendPath, "index.html"), "utf-8");
   return new Response(html, {
     headers: { "Content-Type": "text/html" },
@@ -213,7 +235,7 @@ app.listen(3000, () => {
   console.log("Elysia is serving at http://localhost:3000");
 });
 
-// Utility function to determine MIME type based on file extension
+// Utility function to determine MIME type
 function getMimeType(filePath: string): string {
   const ext = filePath.split(".").pop();
   const mimeTypes: Record<string, string> = {

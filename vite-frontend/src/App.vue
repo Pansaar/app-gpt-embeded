@@ -1,54 +1,90 @@
 <template>
   <div id="app">
     <header>
+      <button class="hamburger" @click="toggleNav">☰</button>
       <h1>BAY-AUTO Chatbot</h1>
     </header>
-    <main>
-      <p>Powered by ChatGPT API</p>
-      <div>
-        <!-- Dynamically display images -->
-        <img
-          v-for="image in images"
-          id="carImage"
-          :key="image"
-          :src="`http://localhost:3000/automobile/${image}`"
-          :alt="image"
-          type="image"
-          @click="updateData(image)"
-        />
+    <div class="main-container">
+      <!-- Side Navigation -->
+      <div :class="{ 'side-nav': true, show: showNav }">
+        <h2>Categories</h2>
+        <ul>
+          <li class="nav-item" @click="showImages('cars')">Cars</li>
+          <li class="nav-item" @click="showImages('motorcycles')">Motorcycles</li>
+        </ul>
+        <h3 @click="toggleNav">X</h3>
       </div>
-      <input
-        type="text"
-        v-model="userInput"
-        placeholder="Type your question for GPT..."
-        @keyup.enter="loadData"
-      />
-      <button @click="loadData">Ask BAY-NANA</button>
-      <div v-if="data">
-        <pre>{{ data }}</pre>
-      </div>
-    </main>
+
+      <!-- Main Content -->
+      <main class="content">
+        <p>Powered by ChatGPT API</p>
+
+        <!-- Search Input and Button -->
+        <div>
+          <input
+            type="text"
+            v-model="userInput"
+            placeholder="Type your question for GPT..."
+            @keyup.enter="loadData"
+          />
+          <button id="searchButton" @click="loadData">Ask BAY-NANA</button>
+        </div>
+
+        <!-- Display Images -->
+        <div>
+          <img
+            v-for="image in images"
+            :key="image"
+            :src="image"
+            :alt="image"
+            class="car-image"
+            @click="updateData(image)"
+          />
+        </div>
+
+        <!-- Display GPT Response -->
+        <div v-if="data">
+          <pre>{{ data }}</pre>
+        </div>
+      </main>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { ref, onMounted } from "vue";
+import { ref } from "vue";
 
 export default {
   name: "App",
   setup() {
-    const images = ref<string[]>([]); // Array of images
-    const data = ref<string | null>(null); // Stores pre-prompt or GPT response
+    const images = ref<string[]>([]); // Array to store image URLs
+    const data = ref<string | null>(null); // GPT response or status message
     const userInput = ref<string>(""); // User input for the chatbot
-    const selectedImage = ref<string | null>(null); // Currently selected image name
+    const selectedImage = ref<string | null>(null); // Selected image name
+    const showNav = ref<boolean>(false); // Controls the visibility of the side navigation
 
-    // Fetch the list of images from the backend
-    const fetchImages = async () => {
+    const fetchImages = async (category: string) => {
+      let endpoint = "";
+
+      // Determine which endpoint to call based on the category
+      if (category === "cars") {
+        endpoint = "/list-images-cars";
+      } else if (category === "motorcycles") {
+        endpoint = "/list-images-motorcycles";
+      } else {
+        endpoint = "/list-images"; // Default: Fetch all images
+      }
+
       try {
-        const response = await fetch("http://localhost:3000/list-images");
+        const response = await fetch(`http://localhost:3000${endpoint}`); // Update backend endpoint if necessary
         if (response.ok) {
           const result = await response.json();
-          images.value = result.images; // Update images array
+          if (result.images) {
+            // Filter out URLs ending with a trailing slash (directories)
+            images.value = result.images.filter((url: string) => !url.endsWith("/"));
+          } else {
+            console.error("Unexpected response format:", result);
+          }
         } else {
           console.error("Failed to fetch images:", response.statusText);
         }
@@ -57,31 +93,30 @@ export default {
       }
     };
 
-    // Updates data when an image is clicked
     const updateData = (image: string) => {
-      // Remove the file extension from the image name
-      const prePrompt = image.replace(/\.(png|jpg|jpeg)$/i, "");
+      const prePrompt = image.split("/").pop()?.replace(/\.(png|jpg|jpeg)$/i, "") || "";
       data.value = `Selected Automobile: ${prePrompt}`;
-      selectedImage.value = prePrompt; // Store the selected image name
+      selectedImage.value = prePrompt;
     };
 
-    // Handles the chatbot question logic
+    const toggleNav = () => {
+      showNav.value = !showNav.value;
+    };
+
+    const showImages = (category: string) => {
+      fetchImages(category);
+      toggleNav();
+    };
+
     const loadData = async () => {
-      if (!userInput.value) {
+      if (!userInput.value.trim()) {
         alert("Please enter a question!");
         return;
       }
 
-      // Add pre-prompt for automobile-related questions
       const prePrompt = selectedImage.value
-        ? `Automobile Context: ${selectedImage.value}. `
-        : "";
-
-      // If the question is unrelated to automobiles, ignore it
-      if (!selectedImage.value && !userInput.value.toLowerCase().includes("car")) {
-        data.value = "This question is not related to automobiles. Please select a car or ask a car-related question.";
-        return;
-      }
+        ? `Automobile Context: ${selectedImage.value}. Please answer within 150 tokens. `
+        : "Please answer within 150 tokens. ";
 
       try {
         const response = await fetch("http://localhost:3000/gpt-search", {
@@ -94,10 +129,8 @@ export default {
 
         if (response.ok) {
           const result = await response.json();
-
-          // Check if the result has valid data
           if (result.choices && result.choices.length > 0) {
-            data.value = result.choices[0].message.content.trim(); // Accessing the correct property
+            data.value = result.choices[0].message.content.trim(); // Access the GPT response
           } else {
             data.value = "No response from GPT. Please try again.";
             console.error("Unexpected API response:", result);
@@ -112,23 +145,22 @@ export default {
       }
     };
 
-    // Fetch images when the component is mounted
-    onMounted(() => {
-      fetchImages();
-    });
-
     return {
       images,
       data,
       userInput,
       loadData,
       updateData,
+      showNav,
+      toggleNav,
+      showImages,
     };
   },
 };
 </script>
 
 <style scoped>
+/* General App Styles */
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   text-align: center;
@@ -136,24 +168,118 @@ export default {
 }
 
 header {
+  display: flex;
+  align-items: center;
   background-color: #d1b239;
   padding: 20px;
 }
 
 header h1 {
   color: white;
+  margin: 0 auto;
+  /* Centers the title */
 }
 
-button {
+.hamburger {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 0;
+  font-size: 32px;
+}
+
+.hamburger:hover {
+  color: #1f1f1f;
+
+}
+
+/* Side Navigation */
+.side-nav {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  /* Hidden by default */
+  width: 250px;
+  height: 100vh;
+  background-color: #1f1f1f;
+  color: white;
+  padding: 20px;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+  z-index: 1050;
+  transition: transform 0.3s ease-in-out, left 0.3s ease-in-out;
+}
+
+.side-nav.show {
+  left: 0;
+  /* Slide in */
+}
+
+.side-nav h3 {
+  display: flex;
+  justify-content: right;
+  margin-top: -210px;
+}
+
+.side-nav h3:hover {
+  cursor: pointer;
+}
+
+.side-nav h2 {
+  font-size: 24px;
+  color: #ffffff;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 10px;
+}
+
+.side-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.side-nav .nav-item {
+  font-size: 18px;
+  margin: 15px 0;
+  padding: 10px 20px;
+  border-radius: 5px;
+  background-color: #333;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.side-nav .nav-item:hover {
+  background-color: #d1b239;
+  color: black;
+}
+
+/* Main Content */
+.content {
+  flex: 1;
+  padding: 20px;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+.content.hidden {
+  margin-left: 0;
+  /* Adjust when nav is hidden */
+}
+
+/* Input and Buttons */
+#searchButton {
   background-color: #d1b239;
   color: white;
   border: none;
   padding: 10px 20px;
   cursor: pointer;
   font-size: 16px;
+  border-radius: 4px;
 }
 
-button:hover {
+#searchButton:hover {
   background-color: #bfa02c;
 }
 
@@ -165,6 +291,7 @@ input {
   border-radius: 4px;
 }
 
+/* Preformatted Text */
 pre {
   background-color: rgb(61, 61, 61);
   padding: 15px;
@@ -176,15 +303,28 @@ pre {
   white-space: pre-wrap;
 }
 
-img {
+/* Car Image Styling */
+.car-image {
   width: 200px;
   margin: 10px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-img:hover {
+.car-image:hover {
   cursor: pointer;
   box-shadow: #d1b239 1px 1px 10px;
+}
+
+@media (max-width: 768px) {
+  .side-nav {
+    width: 200px;
+    /* Narrower for smaller screens */
+  }
+
+  .content {
+    margin-left: 200px;
+    /* Adjust content margin */
+  }
 }
 </style>
