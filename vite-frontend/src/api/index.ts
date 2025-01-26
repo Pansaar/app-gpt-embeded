@@ -29,7 +29,7 @@ const app = new Elysia();
 app.onRequest((context) => {
   const allowedOrigins = [
     "http://localhost:4173", // Local development
-    "https://your-production-frontend.com" // Add production frontend URL
+    "https://main.d10zio24cxzx9i.amplifyapp.com" // Add production frontend URL
   ];
 
   const origin = context.request.headers.get("origin") || "";
