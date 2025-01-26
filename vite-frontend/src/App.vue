@@ -19,32 +19,40 @@
       <main class="content">
         <p>Powered by ChatGPT API</p>
 
-        <!-- Search Input and Button -->
-        <div>
-          <input
-            type="text"
-            v-model="userInput"
-            placeholder="Type your question for GPT..."
-            @keyup.enter="loadData"
-          />
-          <button id="searchButton" @click="loadData">Ask BAY-NANA</button>
-        </div>
-
         <!-- Display Images -->
-        <div>
-          <img
+        <div
+          class="car-image-container"
+          :class="{ 'column-layout': selectedImage }"
+        >
+          <div
             v-for="image in images"
             :key="image"
-            :src="image"
-            :alt="image"
-            class="car-image"
-            @click="updateData(image)"
-          />
-        </div>
+            class="image-wrapper"
+          >
+            <img
+              :src="image"
+              :alt="image"
+              class="car-image"
+              :class="{ selected: selectedImage === image }"
+              @click="updateData(image)"
+            />
 
-        <!-- Display GPT Response -->
-        <div v-if="data">
-          <pre>{{ data }}</pre>
+            <!-- Show Input and Button for the Selected Image -->
+            <div v-if="selectedImage === image" class="input-container">
+              <input
+                type="text"
+                v-model="userInput"
+                placeholder="Type your question for GPT..."
+                @keyup.enter="loadData"
+              />
+              <button id="searchButton" @click="loadData">Ask BAY-NANA</button>
+            </div>
+
+            <!-- Display GPT Response Below the Selected Image -->
+            <div v-if="selectedImage === image && data" class="data-response">
+              <pre>{{ data }}</pre>
+            </div>
+          </div>
         </div>
       </main>
     </div>
@@ -94,10 +102,19 @@ export default {
     };
 
     const updateData = (image: string) => {
-      const prePrompt = image.split("/").pop()?.replace(/\.(png|jpg|jpeg)$/i, "") || "";
-      data.value = `Selected Automobile: ${prePrompt}`;
-      selectedImage.value = prePrompt;
-    };
+  if (selectedImage.value === image) {
+    // If the same image is clicked, deselect it
+    data.value = null;
+    selectedImage.value = null; // Reset to no selected image
+  } else {
+    // Select the clicked image
+    const prePrompt = image.split("/").pop()?.replace(/\.(png|jpg|jpeg)$/i, "") || "";
+    data.value = `Selected Automobile: ${prePrompt}`;
+    selectedImage.value = image; // Track the selected image
+  }
+};
+
+
 
     const toggleNav = () => {
       showNav.value = !showNav.value;
@@ -115,7 +132,7 @@ export default {
       }
 
       const prePrompt = selectedImage.value
-        ? `Automobile Context: ${selectedImage.value}. Please answer within 150 tokens. `
+        ? `Automobile Context: ${selectedImage.value}. Please answer within 150 tokens. The model of the car is the automobile context. Ignore the url`
         : "Please answer within 150 tokens. ";
 
       try {
@@ -153,6 +170,7 @@ export default {
       updateData,
       showNav,
       toggleNav,
+      selectedImage,
       showImages,
     };
   },
@@ -303,12 +321,25 @@ pre {
   white-space: pre-wrap;
 }
 
-/* Car Image Styling */
+.car-image-container {
+  display: flex;
+  justify-content: center; /* Center images horizontally */
+  align-items: center; /* Center images vertically */
+  flex-wrap: wrap; /* Allow wrapping for smaller screens */
+  gap: 20px; /* Space between images */
+  transition: all 0.3s ease; /* Smooth layout transitions */
+}
+
+.car-image-container.column-layout {
+  flex-direction: column; /* Stack images vertically */
+  align-items: center; /* Center images horizontally */
+}
+
 .car-image {
   width: 200px;
-  margin: 10px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease; /* Smooth size and position transitions */
 }
 
 .car-image:hover {
@@ -326,5 +357,54 @@ pre {
     margin-left: 200px;
     /* Adjust content margin */
   }
+}
+
+.input-container {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px; /* Add space between input and button */
+}
+
+.input-container input {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 80%; /* Adjust width as needed */
+}
+
+.input-container button {
+  background-color: #d1b239;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.input-container button:hover {
+  background-color: #bfa02c;
+}
+
+.car-image.selected {
+  display: block;
+  width: 70vw; 
+  margin: 0 auto; /* Center the selected image */
+  border: 2px solid #d1b239;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.car-image-container.column-layout .car-image:not(.selected) {
+  opacity: 0.7; /* Dim non-selected images */
+  transition: opacity 0.3s ease;
+}
+
+.car-image-container.column-layout .car-image:not(.selected):hover {
+  opacity: 1; /* Restore opacity on hover */
 }
 </style>

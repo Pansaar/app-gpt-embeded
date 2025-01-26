@@ -1,0 +1,28 @@
+FROM node:18 AS base
+
+# Install bun
+RUN curl -fsSL https://bun.sh/install | bash
+
+# Add bun to PATH
+ENV PATH="/root/.bun/bin:$PATH"
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json, package-lock.json, and bun.lockb if available
+COPY package*.json bun.lockb* ./
+
+# Install dependencies using bun
+RUN bun install
+
+# Copy all application files to the container
+COPY . .
+
+# Expose the port your app will run on
+EXPOSE 3000
+
+# Set the working directory to the folder containing index.ts
+WORKDIR /app/src/api
+
+# Command to run your application with bun
+CMD ["bun", "run", "./index.ts"]
