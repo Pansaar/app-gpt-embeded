@@ -5,7 +5,6 @@
       <h1>BAY-AUTO Chatbot</h1>
     </header>
     <div class="main-container">
-      <!-- Side Navigation -->
       <div :class="{ 'side-nav': true, show: showNav }">
         <h2>Categories</h2>
         <ul>
@@ -15,11 +14,8 @@
         <h3 @click="toggleNav">X</h3>
       </div>
 
-      <!-- Main Content -->
       <main class="content">
         <p>Powered by ChatGPT API</p>
-
-        <!-- Display Images -->
         <div
           class="car-image-container"
           :class="{ 'column-layout': selectedImage }"
@@ -36,8 +32,6 @@
               :class="{ selected: selectedImage === image }"
               @click="updateData(image)"
             />
-
-            <!-- Show Input and Button for the Selected Image -->
             <div v-if="selectedImage === image" class="input-container">
               <input
                 type="text"
@@ -47,8 +41,6 @@
               />
               <button id="searchButton" @click="loadData">Ask BAY-NANA</button>
             </div>
-
-            <!-- Display GPT Response Below the Selected Image -->
             <div v-if="selectedImage === image && data" class="data-response">
               <pre>{{ data }}</pre>
             </div>
@@ -65,30 +57,28 @@ import { ref } from "vue";
 export default {
   name: "App",
   setup() {
-    const images = ref<string[]>([]); // Array to store image URLs
-    const data = ref<string | null>(null); // GPT response or status message
-    const userInput = ref<string>(""); // User input for the chatbot
-    const selectedImage = ref<string | null>(null); // Selected image name
-    const showNav = ref<boolean>(false); // Controls the visibility of the side navigation
+    const images = ref<string[]>([]); 
+    const data = ref<string | null>(null); 
+    const userInput = ref<string>(""); 
+    const selectedImage = ref<string | null>(null);
+    const showNav = ref<boolean>(false); 
 
     const fetchImages = async (category: string) => {
       let endpoint = "";
 
-      // Determine which endpoint to call based on the category
       if (category === "cars") {
         endpoint = "/list-images-cars";
       } else if (category === "motorcycles") {
         endpoint = "/list-images-motorcycles";
       } else {
-        endpoint = "/list-images"; // Default: Fetch all images
+        endpoint = "/list-images"; 
       }
 
       try {
-        const response = await fetch(`http://localhost:3000${endpoint}`); // Update backend endpoint if necessary
+        const response = await fetch(`http://47.129.37.247:3000${endpoint}`);
         if (response.ok) {
           const result = await response.json();
           if (result.images) {
-            // Filter out URLs ending with a trailing slash (directories)
             images.value = result.images.filter((url: string) => !url.endsWith("/"));
           } else {
             console.error("Unexpected response format:", result);
@@ -102,19 +92,15 @@ export default {
     };
 
     const updateData = (image: string) => {
-  if (selectedImage.value === image) {
-    // If the same image is clicked, deselect it
-    data.value = null;
-    selectedImage.value = null; // Reset to no selected image
-  } else {
-    // Select the clicked image
-    const prePrompt = image.split("/").pop()?.replace(/\.(png|jpg|jpeg)$/i, "") || "";
-    data.value = `Selected Automobile: ${prePrompt}`;
-    selectedImage.value = image; // Track the selected image
-  }
-};
-
-
+      if (selectedImage.value === image) {
+        data.value = null;
+        selectedImage.value = null;
+      } else {
+        const prePrompt = image.split("/").pop()?.replace(/\.(png|jpg|jpeg)$/i, "") || "";
+        data.value = `Selected Automobile: ${prePrompt}`;
+        selectedImage.value = image;
+      }
+    };
 
     const toggleNav = () => {
       showNav.value = !showNav.value;
@@ -136,7 +122,7 @@ export default {
         : "Please answer within 150 tokens. ";
 
       try {
-        const response = await fetch("http://localhost:3000/gpt-search", {
+        const response = await fetch("http://47.129.37.247:3000/gpt-search", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -147,7 +133,7 @@ export default {
         if (response.ok) {
           const result = await response.json();
           if (result.choices && result.choices.length > 0) {
-            data.value = result.choices[0].message.content.trim(); // Access the GPT response
+            data.value = result.choices[0].message.content.trim();
           } else {
             data.value = "No response from GPT. Please try again.";
             console.error("Unexpected API response:", result);
@@ -178,7 +164,6 @@ export default {
 </script>
 
 <style scoped>
-/* General App Styles */
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   text-align: center;
@@ -195,7 +180,6 @@ header {
 header h1 {
   color: white;
   margin: 0 auto;
-  /* Centers the title */
 }
 
 .hamburger {
@@ -213,12 +197,10 @@ header h1 {
 
 }
 
-/* Side Navigation */
 .side-nav {
   position: fixed;
   top: 0;
   left: -300px;
-  /* Hidden by default */
   width: 250px;
   height: 100vh;
   background-color: #1f1f1f;
@@ -231,7 +213,6 @@ header h1 {
 
 .side-nav.show {
   left: 0;
-  /* Slide in */
 }
 
 .side-nav h3 {
@@ -274,7 +255,6 @@ header h1 {
   color: black;
 }
 
-/* Main Content */
 .content {
   flex: 1;
   padding: 20px;
@@ -283,10 +263,8 @@ header h1 {
 
 .content.hidden {
   margin-left: 0;
-  /* Adjust when nav is hidden */
 }
 
-/* Input and Buttons */
 #searchButton {
   background-color: #d1b239;
   color: white;
@@ -309,7 +287,6 @@ input {
   border-radius: 4px;
 }
 
-/* Preformatted Text */
 pre {
   background-color: rgb(61, 61, 61);
   padding: 15px;
@@ -323,23 +300,23 @@ pre {
 
 .car-image-container {
   display: flex;
-  justify-content: center; /* Center images horizontally */
-  align-items: center; /* Center images vertically */
-  flex-wrap: wrap; /* Allow wrapping for smaller screens */
-  gap: 20px; /* Space between images */
-  transition: all 0.3s ease; /* Smooth layout transitions */
+  justify-content: center; 
+  align-items: center; 
+  flex-wrap: wrap; 
+  gap: 20px; 
+  transition: all 0.3s ease; 
 }
 
 .car-image-container.column-layout {
-  flex-direction: column; /* Stack images vertically */
-  align-items: center; /* Center images horizontally */
+  flex-direction: column; 
+  align-items: center; 
 }
 
 .car-image {
   width: 200px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease; /* Smooth size and position transitions */
+  transition: all 0.3s ease; 
 }
 
 .car-image:hover {
@@ -350,12 +327,10 @@ pre {
 @media (max-width: 768px) {
   .side-nav {
     width: 200px;
-    /* Narrower for smaller screens */
   }
 
   .content {
     margin-left: 200px;
-    /* Adjust content margin */
   }
 }
 
@@ -364,7 +339,7 @@ pre {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px; /* Add space between input and button */
+  gap: 10px; 
 }
 
 .input-container input {
@@ -372,7 +347,7 @@ pre {
   font-size: 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  width: 80%; /* Adjust width as needed */
+  width: 80%; 
 }
 
 .input-container button {
@@ -393,18 +368,18 @@ pre {
 .car-image.selected {
   display: block;
   width: 70vw; 
-  margin: 0 auto; /* Center the selected image */
+  margin: 0 auto; 
   border: 2px solid #d1b239;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .car-image-container.column-layout .car-image:not(.selected) {
-  opacity: 0.7; /* Dim non-selected images */
+  opacity: 0.7; 
   transition: opacity 0.3s ease;
 }
 
 .car-image-container.column-layout .car-image:not(.selected):hover {
-  opacity: 1; /* Restore opacity on hover */
+  opacity: 1; 
 }
 </style>
