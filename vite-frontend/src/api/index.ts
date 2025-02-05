@@ -59,7 +59,7 @@ if (LOGGING_ENABLED) console.log("Frontend Path:", frontendPath);
 
 app.onRequest((context) => {
   const allowedOrigins = [
-    "http://localhost:4173", 
+    "http://13.215.45.229:4173", 
     "https://main.d10zio24cxzx9i.amplifyapp.com", 
   ];
 
@@ -221,3 +221,4 @@ app.listen({
 }, () => {
   console.log("Elysia is serving at http://0.0.0.0:3000");
 });
+
