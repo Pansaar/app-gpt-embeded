@@ -16,4 +16,10 @@ EXPOSE 3000
 
 WORKDIR /app/src/api
 
+
 CMD ["bun", "run", "./index.ts"]
+
+
+
+
+
