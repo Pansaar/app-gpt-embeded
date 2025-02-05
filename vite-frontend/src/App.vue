@@ -75,7 +75,7 @@ export default {
       }
 
       try {
-        const response = await fetch(`http://54.255.249.103:3000${endpoint}`);
+        const response = await fetch(`http://13.215.45.229:3000${endpoint}`);
         if (response.ok) {
           const result = await response.json();
           if (result.images) {
@@ -122,7 +122,7 @@ export default {
         : "Please answer within 150 tokens. ";
 
       try {
-        const response = await fetch("http://54.255.249.103:3000/gpt-search", {
+        const response = await fetch("http://13.215.45.229:3000/gpt-search", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
