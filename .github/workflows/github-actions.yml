@@ -28,6 +28,10 @@ jobs:
           cd vite-frontend
           npm run build
 
-      - name: Deploy `index.html` and `assets/` to S3
+      - name: Deploy `index.html` to S3
         run: |
-          aws s3 sync vite-frontend/dist/ s3://bay-auto-chatbot-frontend --delete
+          aws s3 cp vite-frontend/dist/index.html s3://bay-auto-chatbot-frontend/index.html
+
+      - name: Deploy `assets/` folder to S3
+        run: |
+          aws s3 sync vite-frontend/dist/assets/ s3://bay-auto-chatbot-frontend/assets/ --delete
