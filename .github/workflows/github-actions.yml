@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main 
+      - main  # ✅ Runs only on push to "main"
 
 jobs:
   build:
@@ -19,7 +19,11 @@ jobs:
           node-version: '20.x'
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          cd vite-frontend 
+          npm install
 
       - name: Build the Project
-        run: npm run build
+        run: |
+          cd vite-frontend
+          npm run build
