@@ -3,10 +3,10 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main  # ✅ Runs only on push to "main"
+      - main
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,3 +27,7 @@ jobs:
         run: |
           cd vite-frontend
           npm run build
+
+      - name: Deploy `index.html` and `assets/` to S3
+        run: |
+          aws s3 sync vite-frontend/dist/ s3://bay-auto-chatbot-frontend --delete
