@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -28,10 +32,16 @@ jobs:
           cd vite-frontend
           npm run build
 
-      - name: Deploy `index.html` to S3
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::YOUR_ACCOUNT_ID:role/GitHubOIDC_S3Deploy
+          aws-region: YOUR_AWS_REGION
+
+      - name: Deploy `index.html` to S3  # ✅ Upload index.html separately
         run: |
           aws s3 cp vite-frontend/dist/index.html s3://bay-auto-chatbot-frontend/index.html
 
-      - name: Deploy `assets/` folder to S3
+      - name: Deploy `assets/` folder to S3  # ✅ Upload assets folder separately
         run: |
           aws s3 sync vite-frontend/dist/assets/ s3://bay-auto-chatbot-frontend/assets/ --delete
