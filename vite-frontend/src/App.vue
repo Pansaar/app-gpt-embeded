@@ -9,7 +9,7 @@
         <h2>Categories</h2>
         <ul>
           <li class="nav-item" @click="showImages('cars')">Cars</li>
-          <li class="nav-item" @click="showImages('motorcycles')">Motorcycles</li>
+          <li class="nav-item" @click="showImages('motorcycles')">Motorcycle</li>
         </ul>
         <h3 @click="toggleNav">X</h3>
       </div>
