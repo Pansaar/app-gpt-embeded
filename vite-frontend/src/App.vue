@@ -44,7 +44,7 @@ const selectedImage = ref<string | null>(null);
 const data = ref<string | null>(null);
 const showNav = ref(false);
 
-const API_GATEWAY_BASE_URL = "https://ewgz22lqlh.execute-api.ap-southeast-7.amazonaws.com/prod";
+const API_GATEWAY_BASE_URL = "https://z29mmvkyfj.execute-api.ap-southeast-1.amazonaws.com/prod";
 
 // ✅ Fetch Images from API Gateway
 const fetchImages = async (category: string) => {
