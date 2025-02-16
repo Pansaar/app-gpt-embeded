@@ -56,7 +56,7 @@ jobs:
       # ✅ Set Node.js Version & Disable Oryx Build
       - name: Configure Azure App Service
         run: |
-          az webapp config appsettings set --resource-group test-resource-group --name test-web-app-pansaar --settings WEBSITE_NODE_DEFAULT_VERSION=20 SCM_DO_BUILD_DURING_DEPLOYMENT=false
+          az webapp config appsettings set --resource-group test-resource-group --name test-web-app-pansaar --settings WEBSITE_NODE_DEFAULT_VERSION=20 SCM_DO_BUILD_DURING_DEPLOYMENT=false WEBSITES_ENABLE_APP_SERVICE_STORAGE=false
 
       # ✅ Deploy Full `dist/` to Azure Web App (New Method)
       - name: Deploy Full `dist/` to Azure Web App
@@ -64,7 +64,7 @@ jobs:
           cd vite-frontend/dist
           zip -r ../dist.zip .  # Ensure only contents inside `dist/` are zipped
           cd ..
-          az webapp deploy --resource-group test-resource-group --name test-web-app-pansaar --src-path dist.zip
+          az webapp deploy --resource-group test-resource-group --name test-web-app-pansaar --src-path dist.zip --type zip
 
       # 🔄 Restart Azure App Service After Deployment
       - name: Restart Azure Web App
