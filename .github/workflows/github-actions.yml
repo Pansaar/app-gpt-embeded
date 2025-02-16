@@ -53,8 +53,28 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure Web App
+      # ✅ Deploy Full `dist/` to Azure Web App
+      - name: Deploy Full `dist/` to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: "test-web-app-pansaar"
           package: "vite-frontend/dist"
+
+      # ✅ Deploy `index.html` Separately
+      - name: Deploy `index.html` to Azure
+        run: |
+          az webapp deployment source config-zip --resource-group test-resource-group --name test-web-app-pansaar --src vite-frontend/dist/index.html
+
+      # ✅ Deploy Specific `assets/` Files (JS + CSS)
+      - name: Deploy `main-CaUAVyHy.js` to Azure
+        run: |
+          az webapp deployment source config-zip --resource-group test-resource-group --name test-web-app-pansaar --src vite-frontend/dist/assets/main-CaUAVyHy.js
+
+      - name: Deploy `main-fSkiu0TV.css` to Azure
+        run: |
+          az webapp deployment source config-zip --resource-group test-resource-group --name test-web-app-pansaar --src vite-frontend/dist/assets/main-fSkiu0TV.css
+
+      # 🔄 Restart Azure App Service
+      - name: Restart Azure Web App
+        run: |
+          az webapp restart --name test-web-app-pansaar --resource-group test-resource-group
