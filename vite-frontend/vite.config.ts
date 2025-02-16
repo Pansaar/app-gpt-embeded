@@ -1,20 +1,22 @@
 import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue"; // Use react() if using React
+import vue from "@vitejs/plugin-vue"; 
 import { resolve } from "path";
 
 export default defineConfig({
-  plugins: [vue()], // Replace with react() if using React
+  plugins: [vue()], 
+  base: "/",  // ✅ Ensure correct base path for Azure
   server: {
-    port: Number(process.env.PORT) || 4173, // Convert to number to fix TypeScript error
-    host: "0.0.0.0", // Ensure it listens on all network interfaces
+    port: Number(process.env.PORT) || 8080, // ✅ Ensure compatibility with Azure
+    host: "0.0.0.0",
   },
   build: {
-    outDir: "dist", // Output directory for the build
+    outDir: "dist",
+    assetsDir: "assets",
     rollupOptions: {
       input: {
-        main: resolve(__dirname, "index.html"), // Entry point
+        main: resolve(__dirname, "index.html"),
       },
     },
   },
-  publicDir: "public", // Ensure static assets are correctly served
+  publicDir: "public",
 });
