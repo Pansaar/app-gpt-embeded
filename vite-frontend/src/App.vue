@@ -8,8 +8,8 @@
       <div :class="{ 'side-nav': true, show: showNav }">
         <h2>Categories</h2>
         <ul>
-          <li class="nav-item" @click="showImages('cars')">Carx</li>
-          <li class="nav-item" @click="showImages('motorcycles')">Motorcyclex</li>
+          <li class="nav-item" @click="showImages('cars')">Cars</li>
+          <li class="nav-item" @click="showImages('motorcycles')">Motorcycles</li>
         </ul>
         <h3 @click="toggleNav">X</h3>
       </div>
