@@ -32,7 +32,7 @@ jobs:
           cd vite-frontend
           npm run build
 
-      # AWS S3 Deployment
+      # ✅ AWS S3 Deployment
       - name: Configure AWS Credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -47,26 +47,22 @@ jobs:
         run: |
           aws s3 sync vite-frontend/dist/assets/ s3://bay-auto-chatbot-frontend/assets/ --delete
 
-      # Azure App Service Deployment
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      # - name: Azure Login
+      #   uses: azure/login@v1
+      #   with:
+      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # ✅ Set Node.js Version & Disable Oryx Build
-      - name: Configure Azure App Service
-        run: |
-          az webapp config appsettings set --resource-group test-resource-group --name test-web-app-pansaar --settings WEBSITE_NODE_DEFAULT_VERSION=20 SCM_DO_BUILD_DURING_DEPLOYMENT=false WEBSITES_ENABLE_APP_SERVICE_STORAGE=false
+      # - name: Configure Azure App Service
+      #   run: |
+      #     az webapp config appsettings set --resource-group test-resource-group --name test-web-app-pansaar --settings WEBSITE_NODE_DEFAULT_VERSION=20 SCM_DO_BUILD_DURING_DEPLOYMENT=false WEBSITES_ENABLE_APP_SERVICE_STORAGE=false
 
-      # ✅ Deploy Full `dist/` to Azure Web App (New Method)
-      - name: Deploy Full `dist/` to Azure Web App
-        run: |
-          cd vite-frontend/dist
-          zip -r ../dist.zip .  # Ensure only contents inside `dist/` are zipped
-          cd ..
-          az webapp deploy --resource-group test-resource-group --name test-web-app-pansaar --src-path dist.zip --type zip
+      # - name: Deploy Full `dist/` to Azure Web App
+      #   run: |
+      #     cd vite-frontend/dist
+      #     zip -r ../dist.zip .  # Ensure only contents inside `dist/` are zipped
+      #     cd ..
+      #     az webapp deploy --resource-group test-resource-group --name test-web-app-pansaar --src-path dist.zip --type zip
 
-      # 🔄 Restart Azure App Service After Deployment
-      - name: Restart Azure Web App
-        run: |
-          az webapp restart --name test-web-app-pansaar --resource-group test-resource-group
+      # - name: Restart Azure Web App
+      #   run: |
+      #     az webapp restart --name test-web-app-pansaar --resource-group test-resource-group
