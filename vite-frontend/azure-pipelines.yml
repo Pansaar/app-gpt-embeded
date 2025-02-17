@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  vmImage: ubuntu-latest
+  name: self-hosted  # Specify your custom self-hosted agent pool
 
 steps:
 - checkout: self
