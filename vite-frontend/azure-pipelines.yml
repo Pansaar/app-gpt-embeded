@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  name: self-hosted  # Specify your custom self-hosted agent pool
+  name: self-hosted  # Specify your self-hosted agent pool
 
 steps:
 - checkout: self
@@ -21,7 +21,18 @@ steps:
 # Publish build output as artifacts
 - task: PublishBuildArtifacts@1
   inputs:
-    pathToPublish: 'vite-frontend/dist'  # Change this if your build output is in another folder like 'dist'
+    pathToPublish: 'vite-frontend/dist'  # Change this to your actual build output folder
     artifactName: 'drop'
     publishLocation: 'Container'
   displayName: 'Publish Build Artifacts'
+
+# Deploy via SCP
+- task: CopyFilesOverSSH@0
+  inputs:
+    sshEndpoint: 'my-ssh-service'  # Must match the SSH service connection name
+    sourceFolder: '$(Build.ArtifactStagingDirectory)/drop'
+    contents: '**'  # Transfer all files
+    targetFolder: '/var/www/html'  # Destination path on the remote server
+    readyTimeout: '20000'
+    cleanTargetFolder: true
+  displayName: 'Deploy to 20.189.75.24'
