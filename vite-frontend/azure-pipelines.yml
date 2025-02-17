@@ -21,7 +21,7 @@ steps:
 # Publish build output as artifacts
 - task: PublishBuildArtifacts@1
   inputs:
-    pathToPublish: 'build'  # Change this if your build output is in another folder like 'dist'
+    pathToPublish: 'vite-frontend/dist'  # Change this if your build output is in another folder like 'dist'
     artifactName: 'drop'
     publishLocation: 'Container'
   displayName: 'Publish Build Artifacts'
