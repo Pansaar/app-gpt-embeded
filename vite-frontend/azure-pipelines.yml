@@ -30,7 +30,7 @@ steps:
 - task: CopyFilesOverSSH@0
   inputs:
     sshEndpoint: 'my-ssh-service'  # Must match the SSH service connection name
-    sourceFolder: '$(Build.ArtifactStagingDirectory)'
+    sourceFolder: '$(Build.ArtifactStagingDirectory)/drop'
     contents: '**'  # Transfer all files
     targetFolder: '/var/www/html'  # Destination path on the remote server
     readyTimeout: '20000'
