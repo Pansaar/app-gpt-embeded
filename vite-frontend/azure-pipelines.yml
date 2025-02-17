@@ -37,10 +37,10 @@ steps:
     downloadPath: '$(Build.ArtifactStagingDirectory)'
   displayName: 'Download Build Artifacts'
 
-# Deploy to a temporary directory (avoiding permission issues)
+# Deploy via SCP to a temporary directory
 - task: CopyFilesOverSSH@0
   inputs:
-    sshEndpoint: 'my-ssh-service'  # Must match the SSH service connection name
+    sshEndpoint: 'my-ssh-service'
     sourceFolder: '$(Build.ArtifactStagingDirectory)/drop'  # Ensure artifact path is correct
     contents: '**'  # Transfer all files
     targetFolder: '/home/pansaar/deployment-temp'  # Temporary deployment folder
@@ -48,12 +48,12 @@ steps:
     cleanTargetFolder: true
   displayName: 'Deploy to 20.189.75.24 (Temp Folder)'
 
-# Move files to /var/www/html with correct permissions
+# Move files to /var/www/html without sudo
 - script: |
-    sudo rm -rf /var/www/html/*
-    sudo mv /home/pansaar/deployment-temp/* /var/www/html/
-    sudo chown -R www-data:www-data /var/www/html
-    sudo chmod -R 755 /var/www/html
-    sudo systemctl restart nginx
+    rm -rf /var/www/html/*
+    mv /home/pansaar/deployment-temp/* /var/www/html/
+    chown -R www-data:www-data /var/www/html
+    chmod -R 755 /var/www/html
+    systemctl restart nginx
   displayName: 'Move Files & Restart Nginx'
   condition: succeeded()
