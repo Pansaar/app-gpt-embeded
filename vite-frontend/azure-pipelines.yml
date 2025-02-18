@@ -44,7 +44,7 @@ steps:
       downloadPath: "$(ARTIFACT_PATH)"
     displayName: "Download Build Artifacts"
 
-  # Deploy to Azure Static Web App (Corrected indentation)
+  # Deploy to Azure Static Web App (Corrected indentation) check
   - task: AzureStaticWebApp@0
     inputs:
       azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APPS_API_TOKEN)
