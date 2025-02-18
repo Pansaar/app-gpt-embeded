@@ -29,7 +29,7 @@ steps:
 
   - script: |
       npm install
-      npm install vue-tsc
+      npm install -g vue-tsc
       cd vite-frontend
       npm run build
     displayName: "Install dependencies and build"
