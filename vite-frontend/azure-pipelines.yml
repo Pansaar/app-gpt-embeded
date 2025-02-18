@@ -27,12 +27,13 @@ steps:
       versionSpec: "20.x"
     displayName: "Install Node.js"
 
-  # Install dependencies and build project
   - script: |
       npm install
+      npm install vue-tsc
       cd vite-frontend
       npm run build
     displayName: "Install dependencies and build"
+
 
   # Publish build output as an artifact
   - task: PublishBuildArtifacts@1
