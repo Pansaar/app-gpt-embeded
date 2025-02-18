@@ -5,11 +5,17 @@ pool:
   name: self-hosted  # Specify your self-hosted agent pool
 
 variables:
-  ARTIFACT_NAME: "drop"
-  ARTIFACT_PATH: "$(Build.ArtifactStagingDirectory)/drop"
-  APP_NAME: "web-app-test"  # Your Azure App Service name
-  RESOURCE_GROUP: "test-resource-group"  # Your Azure resource group
-  APP_PACKAGE_PATH: "$(Build.ArtifactStagingDirectory)/drop"
+  - group: StaticWebAppSecrets  # Link the Variable Group
+  - name: ARTIFACT_NAME
+    value: "drop"
+  - name: ARTIFACT_PATH
+    value: "$(Build.ArtifactStagingDirectory)/drop"
+  - name: APP_NAME
+    value: "web-app-test"  # Your Azure App Service name
+  - name: RESOURCE_GROUP
+    value: "test-resource-group"  # Your Azure resource group
+  - name: APP_PACKAGE_PATH
+    value: "$(Build.ArtifactStagingDirectory)/drop"
 
 steps:
   - checkout: self
