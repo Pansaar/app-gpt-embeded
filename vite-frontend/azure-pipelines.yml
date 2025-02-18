@@ -30,6 +30,7 @@ steps:
   # Install dependencies and build project
   - script: |
       npm install
+      cd vite-frontend
       npm run build
     displayName: "Install dependencies and build"
 
