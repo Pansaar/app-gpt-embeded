@@ -44,10 +44,10 @@ steps:
       downloadPath: "$(ARTIFACT_PATH)"
     displayName: "Download Build Artifacts"
 
-    - task: AzureStaticWebApp@0
+  # Deploy to Azure Static Web App (Corrected indentation)
+  - task: AzureStaticWebApp@0
     inputs:
       azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APPS_API_TOKEN)
-      app_location: "dist"
-      output_location: "" 
+      app_location: "dist"  # The folder containing the built frontend
+      output_location: ""  # Leave blank for static sites
     displayName: "Deploy to Azure Static Web App"
-  
