@@ -2,7 +2,14 @@ trigger:
   - main
 
 pool:
-  name: self-hosted # Specify your self-hosted agent pool
+  name: self-hosted  # Specify your self-hosted agent pool
+
+variables:
+  ARTIFACT_NAME: "drop"
+  ARTIFACT_PATH: "$(Build.ArtifactStagingDirectory)/drop"
+  APP_NAME: "web-app-test"  # Your Azure App Service name
+  RESOURCE_GROUP: "test-resource-group"  # Your Azure resource group
+  APP_PACKAGE_PATH: "$(Build.ArtifactStagingDirectory)/drop"
 
 steps:
   - checkout: self
@@ -14,52 +21,35 @@ steps:
       versionSpec: "20.x"
     displayName: "Install Node.js"
 
-  # Build the project
+  # Install dependencies and build project
   - script: |
       npm install
       npm run build
-    displayName: "npm install and build"
+    displayName: "Install dependencies and build"
 
   # Publish build output as an artifact
   - task: PublishBuildArtifacts@1
     inputs:
-      pathToPublish: "vite-frontend/dist" # Ensure this is the correct path
-      artifactName: "drop"
+      pathToPublish: "vite-frontend/dist"  # Ensure this is the correct build path
+      artifactName: "$(ARTIFACT_NAME)"
       publishLocation: "Container"
     displayName: "Publish Build Artifacts"
 
-  # Ensure artifacts are available in the deployment job
+  # Download build artifacts
   - task: DownloadBuildArtifacts@0
     inputs:
       buildType: "current"
       downloadType: "single"
-      artifactName: "drop"
-      downloadPath: "$(Build.ArtifactStagingDirectory)"
+      artifactName: "$(ARTIFACT_NAME)"
+      downloadPath: "$(ARTIFACT_PATH)"
     displayName: "Download Build Artifacts"
 
-  # Deploy via SCP to a temporary directory
-  - task: CopyFilesOverSSH@0
+  # Deploy to Azure App Service
+  - task: AzureWebApp@1
     inputs:
-      sshEndpoint: "my-ssh-service"
-      sourceFolder: "$(Build.ArtifactStagingDirectory)/drop" # Ensure artifact path is correct
-      contents: "**" # Transfer all files
-      targetFolder: "/home/pansaar/deployment-temp" # Temporary deployment folder
-      readyTimeout: "20000"
-      cleanTargetFolder: true
-    displayName: "Deploy to 20.189.75.24 (Temp Folder)"
-
-  - script: |
-      # Debug - ensure files exist in deployment folder
-      ls -lah /home/pansaar/deployment-temp
-
-      # Remove old files and move the new files
-      rm -rf /var/www/html/*
-      mv /home/pansaar/deployment-temp/* /var/www/html/
-
-      # Correct the permissions of the files for web server
-      chown -R pansaar:pansaar /var/www/html  # Ensure proper ownership
-      chmod -R 775 /var/www/html  # Ensure proper permissions
-      systemctl restart nginx  # Restart nginx to serve the files
-    displayName: 'Move Files & Restart Nginx'
-    condition: succeeded()
-
+      azureSubscription: "Azure subscription 1"  # Service connection in Azure DevOps
+      appName: "$(APP_NAME)"
+      resourceGroupName: "$(RESOURCE_GROUP)"
+      package: "$(APP_PACKAGE_PATH)"  # Ensure this is the correct path to `dist`
+      runtimeStack: "NODE|20-lts"
+    displayName: "Deploy to Azure App Service"
