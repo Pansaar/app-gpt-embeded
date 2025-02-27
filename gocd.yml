@@ -4,6 +4,10 @@ pipelines:
   ci_cd_pipeline:
     group: "test-group"
     label_template: "${COUNT}"
+    environment_variables: 
+      AWS_REGION: "{{AWS_REGION}}"
+      AWS_ACCESS_KEY_ID: "{{AWS_ACCESS_KEY_ID}}"
+      AWS_SECRET_ACCESS_KEY: "{{AWS_SECRET_ACCESS_KEY}}"
     materials:
       git:
         type: git
