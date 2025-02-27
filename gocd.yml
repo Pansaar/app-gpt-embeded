@@ -9,37 +9,39 @@ pipelines:
         type: git
         url: "https://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@github.com/Pansaar/app-gpt-embeded"
         branch: "main"
+    
     stages:
-      - Build:
-          clean_workspace: true
-          jobs:
-            - BuildJob:
-                tasks:
-                  - exec:
-                      command: bash
-                      arguments:
-                        - "-c"
-                        - |
-                          # Assuming Node.js is pre-installed on the agent
-                          cd vite-frontend
-                          npm install
-                          npm run build
-      - Deploy:
-          fetch_materials: true
-          jobs:
-            - DeployJob:
-                tasks:
-                  - exec:
-                      command: bash
-                      arguments:
-                        - "-c"
-                        - |
-                          # Ensure AWS CLI is available on the agent.
-                          # AWS credentials can be configured via environment variables or agent config.
-                          aws s3 cp vite-frontend/dist/index.html s3://bay-auto-chatbot-frontend/index.html
-                  - exec:
-                      command: bash
-                      arguments:
-                        - "-c"
-                        - |
-                          aws s3 sync vite-frontend/dist/assets/ s3://bay-auto-chatbot-frontend/assets/ --delete
+      Build:
+        clean_workspace: true
+        jobs:
+          BuildJob:
+            tasks:
+              - exec:
+                  command: bash
+                  arguments:
+                    - "-c"
+                    - |
+                      # Assuming Node.js is pre-installed on the agent
+                      cd vite-frontend
+                      npm install
+                      npm run build
+
+      Deploy:
+        fetch_materials: true
+        jobs:
+          DeployJob:
+            tasks:
+              - exec:
+                  command: bash
+                  arguments:
+                    - "-c"
+                    - |
+                      # Ensure AWS CLI is available on the agent.
+                      # AWS credentials can be configured via environment variables or agent config.
+                      aws s3 cp vite-frontend/dist/index.html s3://bay-auto-chatbot-frontend/index.html
+              - exec:
+                  command: bash
+                  arguments:
+                    - "-c"
+                    - |
+                      aws s3 sync vite-frontend/dist/assets/ s3://bay-auto-chatbot-frontend/assets/ --delete
