@@ -2,7 +2,6 @@ format_version: 10
 
 pipelines:
   ci_cd_pipeline:
-    group: "MyGroup"
     label_template: "${COUNT}"
     materials:
       git:
@@ -11,7 +10,7 @@ pipelines:
         branch: "main"
     
     stages:
-      - Build:  # 👈 Added "-" to define a list
+      - Build:
           clean_workspace: true
           jobs:
             BuildJob:
@@ -21,12 +20,12 @@ pipelines:
                     arguments:
                       - "-c"
                       - |
-                        # Assuming Node.js is pre-installed on the agent
+                        ## Assuming Node.js is pre-installed on the agent
                         cd vite-frontend
                         npm install
                         npm run build
 
-      - Deploy:  # 👈 Added "-" to define a list
+      - Deploy:
           fetch_materials: true
           jobs:
             DeployJob:
@@ -36,8 +35,8 @@ pipelines:
                     arguments:
                       - "-c"
                       - |
-                        # Ensure AWS CLI is available on the agent.
-                        # AWS credentials can be configured via environment variables or agent config.
+                        ## Ensure AWS CLI is available on the agent.
+                        ## AWS credentials can be configured via environment variables or agent config.
                         aws s3 cp vite-frontend/dist/index.html s3://bay-auto-chatbot-frontend/index.html
                 - exec:
                     command: bash
