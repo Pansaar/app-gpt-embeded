@@ -6,24 +6,25 @@ pipelines:
     environment: test-env  # ✅ Ensure this is set
     label_template: "${COUNT}"
     materials:
-      git:
+      app-repo:
         type: git
-        url: "https://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@github.com/Pansaar/app-gpt-embeded"
+        url: "https://github.com/Pansaar/app-gpt-embeded.git"
         branch: "main"
     
     stages:
       - Build:
-          clean_workspace: true
           jobs:
             BuildJob:
+              clean_workspace: true  # ✅ Moved inside job
               resources:
-                - BuildJob  # ✅ Added resource to match agent
+                - BuildJob
               tasks:
                 - exec:
                     command: bash
                     arguments:
                       - "-c"
                       - |
+                        if [ ! -d "vite-frontend" ]; then echo "vite-frontend directory not found!"; exit 1; fi
                         cd vite-frontend
                         npm install
                         npm run build
@@ -33,17 +34,13 @@ pipelines:
           jobs:
             DeployJob:
               resources:
-                - DeployJob  # ✅ Added resource to match agent
+                - DeployJob
               tasks:
                 - exec:
                     command: bash
                     arguments:
                       - "-c"
                       - |
+                        if ! command -v aws &> /dev/null; then echo "AWS CLI not found!"; exit 1; fi
                         aws s3 cp vite-frontend/dist/index.html s3://bay-auto-chatbot-frontend/index.html
-                - exec:
-                    command: bash
-                    arguments:
-                      - "-c"
-                      - |
                         aws s3 sync vite-frontend/dist/assets/ s3://bay-auto-chatbot-frontend/assets/ --delete
