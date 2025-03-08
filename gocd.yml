@@ -32,7 +32,7 @@ pipelines:
                         git clone --depth 1 https://github.com/Pansaar/app-gpt-embeded.git vite-frontend
 
                         cd vite-frontend
-                        git reset --hard origin/main  # 🔥 Force clean state
+                        git reset --hard origin/main  ## Force clean state
 
                         echo "📦 Installing dependencies..."
                         rm -rf node_modules package-lock.json
