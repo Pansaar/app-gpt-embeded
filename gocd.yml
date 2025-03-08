@@ -15,7 +15,7 @@ pipelines:
           fetch_materials: true 
           jobs:
             BuildJob:
-              clean_workspace: true 
+              clean_workspace: true  # ✅ Forces a clean workspace at job start
               resources:
                 - BuildJob
               tasks:
@@ -24,6 +24,8 @@ pipelines:
                     arguments:
                       - "-c"
                       - |
+                        echo "🚀 Cleaning old build files..."
+                        rm -rf vite-frontend/dist  # ✅ Ensure old files are removed
                         if [ ! -d "vite-frontend" ]; then echo "vite-frontend directory not found!"; exit 1; fi
                         cd vite-frontend
                         npm install
@@ -33,8 +35,9 @@ pipelines:
           fetch_materials: true
           jobs:
             DeployJob:
+              clean_workspace: true  # ✅ Ensures no old files remain
               resources:
-                - BuildJob  # ✅ Ensures it runs on the same agent
+                - BuildJob
                 - DeployJob
               tasks:
                 - exec:
@@ -43,43 +46,19 @@ pipelines:
                       - "-c"
                       - |
                         if ! command -v aws &> /dev/null; then echo "AWS CLI not found!"; exit 1; fi
-                        aws s3 cp vite-frontend/dist/index.html s3://bay-auto-chatbot-frontend/index.html
+                        echo "🚀 Uploading latest index.html..."
+                        aws s3 cp vite-frontend/dist/index.html s3://bay-auto-chatbot-frontend/index.html \
+                          --metadata-directive REPLACE \
+                          --cache-control "no-cache, no-store, must-revalidate" \
+                          --expires 0
 
                 - exec:
                     command: bash
                     arguments:
                       - "-c"
                       - |
-                        aws s3 sync vite-frontend/dist/assets/ s3://bay-auto-chatbot-frontend/assets/ --delete
-
-                # Uncomment the following if you want to deploy to Azure Web App
-                # - exec:
-                #     command: bash
-                #     arguments:
-                #       - "-c"
-                #       - |
-                #         az webapp config appsettings set --resource-group test-resource-group --name test-web-app-pansaar --settings WEBSITE_NODE_DEFAULT_VERSION=20 SCM_DO_BUILD_DURING_DEPLOYMENT=false WEBSITES_ENABLE_APP_SERVICE_STORAGE=false
-                
-                # - exec:
-                #     command: bash
-                #     arguments:
-                #       - "-c"
-                #       - |
-                #         cd vite-frontend/dist
-                #         zip -r ../dist.zip .  # Ensure only contents inside `dist/` are zipped
-                #         cd ..
-                #         az webapp deploy --resource-group test-resource-group --name test-web-app-pansaar --src-path dist.zip --type zip
-                
-                # - exec:
-                #     command: bash
-                #     arguments:
-                #       - "-c"
-                #       - |
-                #         az webapp restart --name test-web-app-pansaar --resource-group test-resource-group
-
-environments:
-  test-env:
-    pipelines:
-      - test-pipeline
-    agents:
-      - bc4933d0-8d6a-4f5e-b37f-15945aacde3f  # ✅ Same agent for BuildJob & DeployJob
+                        echo "🚀 Syncing assets to S3..."
+                        aws s3 sync vite-frontend/dist/assets/ s3://bay-auto-chatbot-frontend/assets/ --delete \
+                          --metadata-directive REPLACE \
+                          --cache-control "no-cache, no-store, must-revalidate" \
+                          --expires 0
