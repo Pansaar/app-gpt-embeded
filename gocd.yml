@@ -12,24 +12,25 @@ pipelines:
     
     stages:
       - Build:
-        fetch_materials: true 
-        jobs:
-          BuildJob:
-            clean_workspace: true  
-            resources:
-              - BuildJob
-            tasks:
-              - exec:
-                  command: bash
-                  arguments:
-                    - "-c"
-                    - |
-                      echo "🚀 Cleaning old build files..."
-                      rm -rf vite-frontend/dist
-                      if [ ! -d "vite-frontend" ]; then echo "vite-frontend directory not found!"; exit 1; fi
-                      cd vite-frontend
-                      npm install
-                      npm run build
+          fetch_materials: true  # ✅ Proper indentation inside the stage
+          jobs:
+            BuildJob:
+              clean_workspace: true  
+              resources:
+                - BuildJob
+              tasks:
+                - exec:
+                    command: bash
+                    arguments:
+                      - "-c"
+                      - |
+                        echo "🚀 Cleaning old build files..."
+                        rm -rf vite-frontend/dist
+                        if [ ! -d "vite-frontend" ]; then echo "vite-frontend directory not found!"; exit 1; fi
+                        cd vite-frontend
+                        npm install
+                        npm run build
+
       - Deploy:
           fetch_materials: true
           jobs:
