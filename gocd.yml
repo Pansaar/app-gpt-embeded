@@ -7,15 +7,15 @@ pipelines:
     materials:
       app-repo:
         type: git
-        url: "https://github.com/Pansaar/app-gpt-embeded.git"
+        url: "https://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@github.com/Pansaar/app-gpt-embeded.git"
         branch: "main"
     
     stages:
       - Build:
-          fetch_materials: true  # ✅ Proper indentation inside the stage
+          fetch_materials: true
           jobs:
             BuildJob:
-              clean_workspace: true  
+              clean_workspace: true
               resources:
                 - BuildJob
               tasks:
@@ -24,10 +24,10 @@ pipelines:
                     arguments:
                       - "-c"
                       - |
-                        echo "🚀 Cleaning old build files..."
-                        rm -rf vite-frontend/dist
-                        if [ ! -d "vite-frontend" ]; then echo "vite-frontend directory not found!"; exit 1; fi
+                        rm -rf vite-frontend
+                        git clone --depth 1 https://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@github.com/Pansaar/app-gpt-embeded.git vite-frontend
                         cd vite-frontend
+                        rm -rf node_modules package-lock.json
                         npm install
                         npm run build
 
@@ -45,22 +45,19 @@ pipelines:
                     arguments:
                       - "-c"
                       - |
-                        if ! command -v aws &> /dev/null; then echo "AWS CLI not found!"; exit 1; fi
-                        echo "Uploading latest index.html..."
+                        if ! command -v aws &> /dev/null; then 
+                          echo "AWS CLI not found!"; 
+                          exit 1; 
+                        fi
+
                         aws s3 cp vite-frontend/dist/index.html s3://bay-auto-chatbot-frontend/index.html \
                           --metadata-directive REPLACE \
-                          --cache-control "no-cache, no-store, must-revalidate" \
+                          --cache-control "no-cache, no-store, must-revalidate, max-age=0" \
                           --expires 0
 
-                - exec:
-                    command: bash
-                    arguments:
-                      - "-c"
-                      - |
-                        echo "Syncing assets to S3..."
                         aws s3 sync vite-frontend/dist/assets/ s3://bay-auto-chatbot-frontend/assets/ --delete \
                           --metadata-directive REPLACE \
-                          --cache-control "no-cache, no-store, must-revalidate" \
+                          --cache-control "no-cache, no-store, must-revalidate, max-age=0" \
                           --expires 0
 
 environments:
