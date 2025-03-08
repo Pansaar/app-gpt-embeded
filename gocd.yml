@@ -10,12 +10,15 @@ pipelines:
         type: git
         url: "https://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@github.com/Pansaar/app-gpt-embeded"
         branch: "main"
-    
+
     stages:
       - Build:
           clean_workspace: true
           jobs:
             BuildJob:
+              resources:
+                - BuildJob  # Ensures agent with this resource picks up the job
+              fetch_materials: true
               tasks:
                 - exec:
                     command: bash
@@ -30,6 +33,8 @@ pipelines:
           fetch_materials: true
           jobs:
             DeployJob:
+              resources:
+                - DeployJob  # Ensures the agent picking this is meant for deployment
               tasks:
                 - exec:
                     command: bash
