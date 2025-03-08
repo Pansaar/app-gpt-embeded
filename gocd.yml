@@ -37,7 +37,7 @@ pipelines:
             DeployJob:
               clean_workspace: true  
               resources:
-                - BuildJob
+                - BuildJob  
                 - DeployJob
               tasks:
                 - exec:
@@ -62,3 +62,10 @@ pipelines:
                           --metadata-directive REPLACE \
                           --cache-control "no-cache, no-store, must-revalidate" \
                           --expires 0
+
+environments:
+  test-env:
+    pipelines:
+      - test-pipeline
+    agents:
+      - bc4933d0-8d6a-4f5e-b37f-15945aacde3f
