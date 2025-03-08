@@ -12,10 +12,10 @@ pipelines:
     
     stages:
       - Build:
-          fetch_materials: true  # ✅ Explicitly fetch materials
+          fetch_materials: true 
           jobs:
             BuildJob:
-              clean_workspace: true  # ✅ Moved to job level
+              clean_workspace: true 
               resources:
                 - BuildJob
               tasks:
