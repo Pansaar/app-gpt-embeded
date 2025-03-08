@@ -16,6 +16,8 @@ pipelines:
           clean_workspace: true
           jobs:
             BuildJob:
+              resources:
+                - BuildJob  # ✅ Added resource to match agent
               tasks:
                 - exec:
                     command: bash
@@ -30,6 +32,8 @@ pipelines:
           fetch_materials: true
           jobs:
             DeployJob:
+              resources:
+                - DeployJob  # ✅ Added resource to match agent
               tasks:
                 - exec:
                     command: bash
