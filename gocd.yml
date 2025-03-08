@@ -55,4 +55,4 @@ environments:
     pipelines:
       - test-pipeline
     agents:
-      - PansaarMacs-Laptop.local # Replace with actual GoCD agent ID
+      - bc4933d0-8d6a-4f5e-b37f-15945aacde3f
