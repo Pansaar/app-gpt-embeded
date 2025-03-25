@@ -4,29 +4,40 @@
       <button class="hamburger" @click="toggleNav">☰</button>
       <h1>BAY-AUTO Chatbot</h1>
     </header>
+
     <div class="main-container">
+      <!-- Sidebar Navigation -->
       <div :class="{ 'side-nav': true, show: showNav }">
         <h2>Categories</h2>
         <ul>
-          <li class="nav-item" @click="showImages('cars')">Carx</li>
-          <li class="nav-item" @click="showImages('motorcycles')">Motorcyclex</li>
+          <li class="nav-item" @click="showImages('cars')">Cars</li>
+          <li class="nav-item" @click="showImages('motorcycles')">Motorcycles</li>
         </ul>
         <h3 @click="toggleNav">X</h3>
       </div>
 
+      <!-- Main Content -->
       <main class="content">
         <p>Powered by ChatGPT API</p>
+
+        <!-- Image Display Section -->
         <div class="car-image-container" :class="{ 'column-layout': selectedImage }">
-          <div v-for="image in images" :key="image" class="image-wrapper">
-            <img :src="image" :alt="image" class="car-image" :class="{ selected: selectedImage === image }"
-              @click="updateData(image)" />
-            <div v-if="selectedImage === image" class="input-container">
+          <div v-for="image in images" :key="image.s3_url" class="image-wrapper">
+            <img :src="image.s3_url" alt="Car Image" class="car-image" @click="updateData(image)" />
+            
+            <!-- Input and Response Section -->
+            <div v-if="selectedImage === image.s3_url" class="input-container">
               <input type="text" v-model="userInput" placeholder="Ask BAY-NANA..." @keyup.enter="loadData" />
               <button id="searchButton" @click="loadData">Ask BAY-NANA</button>
             </div>
-            <div v-if="selectedImage === image && data" class="data-response">
-              <pre>{{ data }}</pre>
+
+            <!-- ✅ Styled ChatGPT-like Response -->
+            <div v-if="selectedImage === image.s3_url && data" class="chat-response">
+              <div class="chat-bubble">
+                <span class="chat-text">{{ data }}</span>
+              </div>
             </div>
+
           </div>
         </div>
       </main>
@@ -35,10 +46,11 @@
 </template>
 
 <script setup lang="ts">
+import type { int } from "aws-sdk/clients/datapipeline";
 import { ref } from "vue";
 
-// ✅ Correct TypeScript Syntax
-const images = ref([] as string[]);
+// ✅ State Variables
+const images = ref<{ s3_url: string; vehicle_brand: string; vehicle_model: string; model_year: int }[]>([]);
 const userInput = ref("");
 const selectedImage = ref<string | null>(null);
 const data = ref<string | null>(null);
@@ -46,43 +58,59 @@ const showNav = ref(false);
 
 const API_GATEWAY_BASE_URL = "https://z29mmvkyfj.execute-api.ap-southeast-1.amazonaws.com/prod";
 
-// ✅ Fetch Images from API Gateway
 const fetchImages = async (category: string) => {
   const endpoint = `${API_GATEWAY_BASE_URL}/fetch-s3?category=${category}`;
   try {
     const response = await fetch(endpoint);
     if (response.ok) {
       const result = await response.json();
-      images.value = result.images?.filter((url: string) => !url.endsWith("/")) || [];
+
+      // Store all attributes in images array
+      images.value = result.images.map((image: any) => ({
+        s3_url: image.s3_url || "",
+        vehicle_brand: image.vehicle_brand || "Unknown Brand",
+        vehicle_model: image.vehicle_model || "Unknown Model",
+        model_year: Number(image.model_year) || 0,
+        vehicle_type: image.vehicle_type || "Unknown Type",
+      }));
+
+      console.log("✅ Loaded Images:", images.value);
     } else {
-      console.error("Failed to fetch images:", response.statusText);
+      console.error("❌ Failed to fetch images:", response.statusText);
     }
   } catch (error) {
-    console.error("Error fetching images:", error);
+    console.error("❌ Error fetching images:", error);
   }
 };
 
-// ✅ Select & Show Image Details
-const updateData = (image: string) => {
-  selectedImage.value = selectedImage.value === image ? null : image;
-  data.value = selectedImage.value
-    ? `Selected Automobile: ${selectedImage.value.split("/").pop()?.replace(/\.(png|jpg|jpeg)$/i, "")}`
-    : null;
+// ✅ Update Selected Image with Vehicle Info
+const updateData = (image: { s3_url: string; vehicle_brand: string; vehicle_model: string; model_year: int }) => {
+  if (selectedImage.value === image.s3_url) {
+    selectedImage.value = null;
+    data.value = null; // Clear response when deselecting
+  } else {
+    selectedImage.value = image.s3_url;
+    data.value = `Selected Vehicle: ${image.vehicle_brand} - ${image.vehicle_model} ${image.model_year}`;
+  }
 };
 
 const loadData = async () => {
   if (!userInput.value.trim()) {
-    alert("Please enter a question!");
+    alert("❌ Please enter a question!");
     return;
   }
 
-  const prePrompt = selectedImage.value
-    ? `Automobile Context: ${selectedImage.value}. Please answer within 150 tokens.`
-    : "Please answer within 150 tokens.";
+  console.log("🚀 Validating Image in DynamoDB before sending to GPT...");
 
-  const requestBody = { input: `${prePrompt} ${userInput.value}` };
+  if (!selectedImage.value) {
+    alert("❌ No image selected!");
+    return;
+  }
 
-  console.log("Sending request body:", JSON.stringify(requestBody));
+  const requestBody = {
+    input: userInput.value,
+    selectedImage: selectedImage.value,
+  };
 
   try {
     const response = await fetch(`${API_GATEWAY_BASE_URL}/gpt-search`, {
@@ -91,34 +119,31 @@ const loadData = async () => {
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
-      body: JSON.stringify(requestBody), // ✅ Convert to JSON before sending
+      body: JSON.stringify(requestBody),
     });
 
-    console.log("Raw API Response:", response);
-
-    if (!response.ok) {
-      console.error("Server error:", response.status, response.statusText);
-      data.value = `Error: ${response.status}`;
-      return;
-    }
-
     const result = await response.json();
-    console.log("Full API Response JSON:", result);
 
-    // ✅ Ensure `result.body` is parsed correctly
-    const responseBody = typeof result.body === "string" ? JSON.parse(result.body) : result.body;
+    console.log("🛠️ Debugging OpenAI Response:", result);
 
-    // ✅ Extract GPT response correctly
-    if (!responseBody.choices || !responseBody.choices.length) {
-      data.value = "No valid response from API.";
+    if (!result.body) {
+      data.value = "No valid response from AI.";
       return;
     }
 
-    const messageContent = responseBody.choices[0].message?.content || "No response from GPT.";
-    data.value = messageContent.trim();
+    // ✅ Fix: Ensure we correctly parse the response body
+    let parsedBody;
+    try {
+      parsedBody = typeof result.body === "string" ? JSON.parse(result.body) : result.body;
+    } catch (error) {
+      console.error("❌ Error parsing OpenAI response body:", error);
+      parsedBody = {};
+    }
+
+    data.value = parsedBody.message || "No response from AI.";
 
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.error("❌ Error fetching data:", error);
     data.value = "Error: Unable to fetch data.";
   }
 };
@@ -136,7 +161,7 @@ const showImages = (category: string) => {
 </script>
 
 <style scoped>
-/* 🔹 Styling (Same as Before) */
+/* 🔹 Styling */
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   text-align: center;
@@ -262,11 +287,27 @@ header h1 {
   background-color: #bfa02c;
 }
 
-pre {
-  background-color: rgb(61, 61, 61);
+.chat-response {
+  display: flex;
+  justify-content: flex-start; /* Align like a chat */
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.chat-bubble {
+  max-width: 100%;
+  background-color: #343434; /* Light gray background */
+  border-radius: 10px;
   padding: 15px;
-  color: white;
-  border-radius: 4px;
-  white-space: pre-wrap;
+  box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.1);
+  font-size: 16px;
+  color: #ffffff;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.chat-text {
+  display: block;
+  white-space: pre-line; /* Ensures line breaks appear */
 }
 </style>

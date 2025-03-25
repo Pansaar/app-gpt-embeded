@@ -40,7 +40,7 @@ steps:
   # Publish build output as an artifact
   - task: PublishBuildArtifacts@1
     inputs:
-      pathToPublish: "vite-frontend/dist"  # Ensure this is the correct build path
+      pathToPublish: "vite-frontend/dist" 
       artifactName: "$(ARTIFACT_NAME)"
       publishLocation: "Container"
     displayName: "Publish Build Artifacts"
@@ -58,7 +58,7 @@ steps:
   - task: AzureStaticWebApp@0
     inputs:
       azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APPS_API_TOKEN)
-      app_location: "vite-frontend/dist"  # The folder containing the built frontend
-      output_location: ""  # Leave blank for static sites
+      app_location: "vite-frontend/dist" 
+      output_location: ""  
       skip_app_build: true
     displayName: "Deploy to Azure Static Web App"
