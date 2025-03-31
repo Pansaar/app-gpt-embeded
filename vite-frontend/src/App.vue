@@ -1,7 +1,55 @@
+<template>
+  <div id="app">
+    <header>
+      <button class="hamburger" @click="toggleNav">☰</button>
+      <h1>BAY-AUTO Chatbot</h1>
+    </header>
+
+    <div class="main-container">
+      <!-- Sidebar Navigation -->
+      <div :class="{ 'side-nav': true, show: showNav }">
+        <h2>Categories</h2>
+        <ul>
+          <li class="nav-item" @click="showImages('cars')">Cars</li>
+          <li class="nav-item" @click="showImages('motorcycles')">Motorcycles</li>
+        </ul>
+        <h3 @click="toggleNav">X</h3>
+      </div>
+
+      <!-- Main Content -->
+      <main class="content">
+        <p>Powered by ChatGPT API</p>
+
+        <!-- Image Display Section -->
+        <div class="car-image-container" :class="{ 'column-layout': selectedImage }">
+          <div v-for="image in images" :key="image.s3_url" class="image-wrapper">
+            <img :src="image.s3_url" alt="Car Image" class="car-image" @click="updateData(image)" />
+            
+            <!-- Input and Response Section -->
+            <div v-if="selectedImage === image.s3_url" class="input-container">
+              <input type="text" v-model="userInput" placeholder="Ask BAY-NANA..." @keyup.enter="loadData" />
+              <button id="searchButton" @click="loadData">Ask BAY-NANA</button>
+            </div>
+
+            <!-- ✅ Styled ChatGPT-like Response -->
+            <div v-if="selectedImage === image.s3_url && data" class="chat-response">
+              <div class="chat-bubble">
+                <span class="chat-text">{{ data }}</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import type { int } from "aws-sdk/clients/datapipeline";
 import { ref } from "vue";
 
+// ✅ State Variables
 const images = ref<{ s3_url: string; vehicle_brand: string; vehicle_model: string; model_year: int }[]>([]);
 const userInput = ref("");
 const selectedImage = ref<string | null>(null);
@@ -111,64 +159,6 @@ const showImages = (category: string) => {
   toggleNav();
 };
 </script>
-
-<template>
-  <div id="app">
-    <header>
-      <button class="hamburger" @click="toggleNav">☰</button>
-      <h1>BAY-AUTO Chatbot</h1>
-    </header>
-
-    <!-- ✅ Only show button on the root path -->
-    <router-link to="/AddVehicle" v-if="$route.path === '/'">
-      <button class="route-button">Add Vehicle</button>
-    </router-link>
-
-    <div class="main-container">
-      <!-- Sidebar -->
-      <div :class="{ 'side-nav': true, show: showNav }">
-        <h2>Categories</h2>
-        <ul>
-          <li class="nav-item" @click="showImages('cars')">Cars</li>
-          <li class="nav-item" @click="showImages('motorcycles')">Motorcycles</li>
-        </ul>
-        <h3 @click="toggleNav">X</h3>
-      </div>
-
-      <main class="content">
-        <!-- ✅ Chatbot logic only on '/' -->
-        <div v-if="$route.path === '/'">
-          <p>Powered by ChatGPT API</p>
-          <div class="car-image-container" :class="{ 'column-layout': selectedImage }">
-            <div v-for="image in images" :key="image.s3_url" class="image-wrapper">
-              <img :src="image.s3_url" alt="Car Image" class="car-image" @click="updateData(image)" />
-
-              <div v-if="selectedImage === image.s3_url" class="input-container">
-                <input
-                  type="text"
-                  v-model="userInput"
-                  placeholder="Ask BAY-NANA..."
-                  @keyup.enter="loadData"
-                />
-                <button id="searchButton" @click="loadData">Ask BAY-NANA</button>
-              </div>
-
-              <div v-if="selectedImage === image.s3_url && data" class="chat-response">
-                <div class="chat-bubble">
-                  <span class="chat-text">{{ data }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ✅ Show routed view otherwise -->
-        <router-view v-else />
-      </main>
-    </div>
-  </div>
-</template>
-
 
 <style scoped>
 /* 🔹 Styling */
